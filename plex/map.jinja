@@ -1,7 +1,6 @@
 {% import_yaml 'plex/defaults.yaml' as default_settings %}
 {% set plex = salt['pillar.get']('plex', default=default_settings.get('plex'), merge=True) %}
 
-
 {% if 'latest' in plex.version %}
     {# Windows:        https://plex.tv/downloads/latest/5?&build=windows-x86&distro=windows #}
     {# Mac:            https://plex.tv/downloads/latest/5?&build=darwin-x86_64&distro=macos #}
@@ -14,10 +13,15 @@
 {% else %}
     {# https://downloads.plex.tv/plex-media-server-new/1.41.2.9200-c6bbc1b53/debian/plexmediaserver_1.41.2.9200-c6bbc1b53_amd64.deb #}
     {% set j1, j2, x86, extension = ('_', '_', 'amd64', '.deb') if salt['grains.get']('os_family') == 'Debian' else ('-', '.', 'x86_64', '.rpm') %}
-    {% set arch = x86 if salt['grains.get']('cpuarch') == 'x86_64' else 'i386' %}
+    {% if salt['grains.get']('cpuarch') == 'x86_64' %}
+        {% set arch = 'x86' %}
+    {% elif salt['grains.get']('cpuarch') == 'aarch64' %}
+        {% set arch = 'arm64' %}
+    {% else %}
+        {% set arch = 'i386' %}
+    {% endif %}
     {% set url = 'https://downloads.plex.tv/plex-media-server-new/' + plex.version + '/' + salt['grains.get']('os_family')|lower + '/plexmediaserver' + j1 + plex.version + j2 + arch + extension %}
 {% endif %}
-
 
 {% do plex.update({
   'url': url
